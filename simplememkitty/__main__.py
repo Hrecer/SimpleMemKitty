@@ -41,8 +41,18 @@ def main():
         return
 
     from PyQt5.QtWidgets import QApplication, QMessageBox
+    from PyQt5 import QtCore as _QtCore
     from simplememkitty.core.settings import Settings
     from simplememkitty.ui.main_window import MainWindow
+
+    # 修复：部分环境下（尤其项目路径含非 ASCII 字符，如中文目录名）PyQt5 不会
+    # 自动把自带的 Qt5/plugins 加入 Qt 库搜索路径，导致启动 GUI 时报
+    # "Could not find the Qt platform plugin 'windows'"。这里在创建 QApplication
+    # 之前显式加入该目录，确保 qwindows.dll 能被找到。
+    _plugins_dir = os.path.join(os.path.dirname(_QtCore.__file__), "Qt5", "plugins")
+    if os.path.isdir(_plugins_dir):
+        _QtCore.QCoreApplication.addLibraryPath(_plugins_dir)
+        os.environ.setdefault("QT_QPA_PLATFORM_PLUGIN_PATH", _plugins_dir)
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
