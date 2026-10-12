@@ -16,35 +16,45 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def _ensure_venv_python():
-    """若当前解释器缺少 GUI 依赖（PyQt5 / psutil），则改用项目 .venv 的
-    解释器重新运行本脚本，并退出当前进程；避免依赖缺失导致"双击没反应"。"""
+    """若当前解释器缺少 GUI 依赖（PyQt5 / psutil），则改用 .venv 的
+    解释器重新运行本脚本，并退出当前进程；避免依赖缺失导致"双击没反应"。
+
+    .venv 按以下顺序查找：
+    1. 项目目录内（SimpleMemKitty\\.venv）
+    2. 上层目录（..\\.venv，多个项目共用的共享环境）
+    """
     try:
         import PyQt5, psutil  # noqa: F401
         return
     except ImportError:
         pass
 
-    venv_python = os.path.join(HERE, ".venv", "Scripts", "python.exe")
+    candidates = [
+        os.path.join(HERE, ".venv", "Scripts", "python.exe"),
+        os.path.join(os.path.dirname(HERE), ".venv", "Scripts", "python.exe"),
+    ]
 
-    # 已经在 .venv 中但仍缺依赖：无法自举，提示安装后退出（防止无限重启）
-    if os.path.abspath(sys.executable) == os.path.abspath(venv_python):
-        sys.stderr.write(
-            "ERROR: 当前 .venv 未安装依赖。请在该目录下执行：\n"
-            "    .venv\\Scripts\\activate\n"
-            "    pip install -r requirements.txt\n"
-        )
-        sys.exit(1)
+    # 已经在某个 .venv 中但仍缺依赖：无法自举，提示安装后退出（防止无限重启）
+    for venv_python in candidates:
+        if os.path.abspath(sys.executable) == os.path.abspath(venv_python):
+            sys.stderr.write(
+                "ERROR: 当前 .venv 未安装依赖。请在该目录下执行：\n"
+                "    .venv\\Scripts\\activate\n"
+                "    pip install -r requirements.txt\n"
+            )
+            sys.exit(1)
 
-    if os.path.isfile(venv_python):
-        # 用 .venv 的解释器重新运行本文件，并原样传递命令行参数
-        subprocess.run([venv_python, os.path.abspath(__file__)] + sys.argv[1:])
-        sys.exit(0)
+    for venv_python in candidates:
+        if os.path.isfile(venv_python):
+            # 用 .venv 的解释器重新运行本文件，并原样传递命令行参数
+            subprocess.run([venv_python, os.path.abspath(__file__)] + sys.argv[1:])
+            sys.exit(0)
 
     sys.stderr.write(
-        "ERROR: 未找到带依赖的 Python 环境（.venv）。请先执行：\n"
+        "ERROR: 未找到带依赖的 Python 环境（.venv）。请在上层目录执行：\n"
         "    python -m venv .venv\n"
         "    .venv\\Scripts\\activate\n"
-        "    pip install -r requirements.txt\n"
+        "    pip install -r SimpleMemKitty\\requirements.txt\n"
     )
     sys.exit(1)
 

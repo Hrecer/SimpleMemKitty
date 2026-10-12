@@ -18,4 +18,3 @@ simplememkitty = "simplememkitty.__main__:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-cache_dir = ".scratch/.pytest_cache"

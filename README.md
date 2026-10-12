@@ -37,15 +37,16 @@ SimpleMemKitty/
 ├── requirements.txt
 ├── conftest.py
 ├── .gitignore
-└── .scratch/                  # 临时/缓存目录，不进入版本库
+└── LICENSE                    # MIT
 ```
 
 ## 启动方式
 
 推荐直接双击仓库根目录下的 `main.py`。
 
-`main.py` 自带环境自举：若当前 Python 未安装依赖，会自动改用项目内 `.venv`
-的解释器重新运行，因此双击即可启动，无需额外脚本。
+`main.py` 自带环境自举：若当前 Python 未安装依赖，会自动改用 `.venv`
+的解释器重新运行，因此双击即可启动，无需额外脚本。`.venv` 按
+「项目目录内 → 上层目录」的顺序查找。
 
 命令行方式：
 
@@ -56,13 +57,15 @@ python main.py --deep-clean   # 无窗口深度清理，适合任务计划
 
 ## 首次准备
 
-如果项目内没有 `.venv`，或需要手动安装依赖：
+`.venv` 放在上层目录（`内存清理\.venv`），可被同目录下多个项目共用。
+如果尚未创建，或需要手动安装依赖：
 
 ```bash
+cd ..                          # 回到上层「内存清理」文件夹
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
+pip install -r SimpleMemKitty\requirements.txt
+python SimpleMemKitty\main.py
 ```
 
 ## 运行测试
@@ -73,15 +76,8 @@ pytest
 
 核心测试不依赖图形界面；未安装界面库时，界面导入测试会自动跳过。
 
-## 临时文件夹 `.scratch`
-
-`.scratch/` 用来集中存放临时文件和缓存，保持根目录整洁：
-
-- 测试缓存默认写在这里（由 `pyproject.toml` 配置）；
-- 可随时删除，下次运行会自动重建；
-- 整个目录被 `.gitignore` 忽略，不进入版本库。
-
 ## 注意事项
 
 - 清理系统级内存列表需要管理员权限；非管理员启动时会询问一次，拒绝则降级运行。
 - 托盘左键单击可显示或隐藏主窗口；清理完成通知默认关闭，可在设置里开启。
+- `.venv` 与 `.scratch` 等本地环境/缓存目录放在仓库外（上层文件夹），不进入版本库。
