@@ -228,11 +228,14 @@ class MainWindow(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
 
     def _on_tray_activated(self, reason):
-        if reason == QSystemTrayIcon.DoubleClick:
+        # 左键单击 / 双击 都用于显示/隐藏主窗口
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             if self.isVisible():
                 self.hide()
             else:
                 self.show()
+                self.raise_()
+                self.activateWindow()
 
     # ---------------- 权限 ----------------
     def _check_admin(self):
@@ -276,6 +279,9 @@ class MainWindow(QMainWindow):
         self._notify_clean(result, self._tr("deep_done"), self._tr("cleaned_none"))
 
     def _notify_clean(self, result, fmt, none_msg):
+        # 默认不弹通知；用户可在设置中手动开启
+        if not self.settings.get("notify_on_clean", False):
+            return
         mb = result["freed_bytes"] / (1024 * 1024)
         if mb >= 1:
             self.tray_icon.showMessage("SimpleMemKitty", fmt % mb,

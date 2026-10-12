@@ -49,6 +49,14 @@ class SettingsDialog(QDialog):
         auto_group.setLayout(auto_layout)
         layout.addWidget(auto_group)
 
+        # 通知
+        notify_group = QGroupBox("通知")
+        notify_layout = QVBoxLayout()
+        self.notify_cb = QCheckBox("清理完成后弹出托盘通知（默认关闭）")
+        notify_layout.addWidget(self.notify_cb)
+        notify_group.setLayout(notify_layout)
+        layout.addWidget(notify_group)
+
         # 语言
         lang_group = QGroupBox("语言")
         lang_layout = QHBoxLayout()
@@ -75,6 +83,7 @@ class SettingsDialog(QDialog):
         self.enable_cb.setChecked(bool(self.settings.get("auto_clean_enabled", False)))
         self.interval_sb.setValue(int(self.settings.get("clean_interval_minutes", 5)))
         self.threshold_sb.setValue(int(self.settings.get("mem_threshold_percent", 80)))
+        self.notify_cb.setChecked(bool(self.settings.get("notify_on_clean", False)))
         lang = self.settings.get("language", "zh")
         self.zh_rb.setChecked(lang != "en")
         self.en_rb.setChecked(lang == "en")
@@ -84,6 +93,7 @@ class SettingsDialog(QDialog):
         self.settings.set("auto_clean_enabled", self.enable_cb.isChecked())
         self.settings.set("clean_interval_minutes", self.interval_sb.value())
         self.settings.set("mem_threshold_percent", self.threshold_sb.value())
+        self.settings.set("notify_on_clean", self.notify_cb.isChecked())
         self.settings.set("language", "en" if self.en_rb.isChecked() else "zh")
         self.settings.save()
         self.settings_saved.emit()
