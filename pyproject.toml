@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simplememkitty"
+version = "2.0.0"
+description = "Windows 内存清理工具（项目版，可测试）"
+requires-python = ">=3.8"
+dependencies = ["PyQt5", "psutil"]
+
+[tool.setuptools]
+packages = ["simplememkitty", "simplememkitty.core", "simplememkitty.auto", "simplememkitty.ui"]
+
+[project.scripts]
+simplememkitty = "simplememkitty.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

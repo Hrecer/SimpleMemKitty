@@ -1,0 +1,33 @@
+# ===== Python 缓存 / 字节码 =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ===== 测试与工具缓存 =====
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== 打包构建产物 =====
+build/
+dist/
+*.egg-info/
+*.spec
+
+# ===== 编辑器 / 系统文件 =====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# ===== 项目运行时生成的本地配置（可选忽略） =====
+# settings.json 由程序自动生成，通常不纳入版本控制
+# settings.json
