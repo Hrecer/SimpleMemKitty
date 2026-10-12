@@ -54,6 +54,15 @@ def log(msg):
     print(f"[build] {msg}", flush=True)
 
 
+def _force_utf8_output():
+    """统一输出为 UTF-8 并容错，避免控制台代码页不一致导致中文乱码或报错。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def run(cmd, **kwargs):
     log("执行: " + " ".join(str(c) for c in cmd))
     subprocess.run([str(c) for c in cmd], check=True, **kwargs)
@@ -143,6 +152,7 @@ def cleanup(keep_temp: bool):
 
 
 def main():
+    _force_utf8_output()
     parser = argparse.ArgumentParser(description="一键打包 SimpleMemKitty 为单文件 EXE")
     parser.add_argument("--outdir", default=str(DEFAULT_OUTDIR),
                         help="EXE 输出目录（默认：项目上层目录）")
