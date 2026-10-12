@@ -35,8 +35,8 @@ class FakeAPI:
         self.calls.append("purge_modified")
         return True
 
-    def purge_combined_list(self):
-        self.calls.append("purge_combined")
+    def purge_low_priority_standby_list(self):
+        self.calls.append("purge_low_standby")
         return True
 
 
@@ -85,13 +85,24 @@ def test_deep_clean_sequence_and_no_jump():
         "clean_ws",
         "purge_standby",
         "purge_modified",
-        "purge_combined",
+        "purge_low_standby",
         "disable",
     ]
     assert res["freed_bytes"] == 2500
 
     # 关键修复：深度清理不会让内存先暴涨再回落
     assert not any(any(b in call for b in FORBIDDEN) for call in api.calls), api.calls
+
+
+def test_memory_list_constants_are_correct():
+    """回归测试：这些常量曾经写错（class=0x57、命令 5/6），导致系统级回收
+    全部静默失败却返回成功，深度清理名存实亡。已在本机实测验证正确值。"""
+    from simplememkitty.core import memory_api
+
+    assert memory_api.SYSTEM_MEMORY_LIST_INFORMATION == 0x50
+    assert memory_api.MEMORY_PURGE_STANDBY_LIST == 4
+    assert memory_api.MEMORY_FLUSH_MODIFIED_LIST == 3
+    assert memory_api.MEMORY_PURGE_LOW_PRIORITY_STANDBY_LIST == 5
 
 
 def test_exception_safety():

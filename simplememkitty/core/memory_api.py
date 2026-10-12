@@ -23,11 +23,17 @@ SE_DEBUG_NAME = "SeDebugPrivilege"
 SE_PROF_SINGLE_PROCESS_NAME = "SeProfileSingleProcessPrivilege"
 SE_INC_QUOTA_NAME = "SeIncreaseQuotaPrivilege"
 
-# NtSetSystemInformation 的 SystemMemoryListInformation class
-SYSTEM_MEMORY_LIST_INFORMATION = 0x57
+# NtSetSystemInformation 的 SystemMemoryListInformation class。
+# 注意：正确值是 0x50（80）。曾经误写为 0x57，导致所有系统级回收静默失败
+# （错误 class 对任意输入都返回成功，问题被状态码掩盖）。
+SYSTEM_MEMORY_LIST_INFORMATION = 0x50
+# SYSTEM_MEMORY_LIST_COMMAND 命令值（与 ISLC / PurgeStandbyList 一脉的通用映射一致，
+# 并已在本机实测验证：0x50 + 命令 4 可真正清空备用列表）。
+# 0=CaptureAccessedBits 1=CaptureAndResetAccessedBits 2=EmptyWorkingSets
+# 3=FlushModifiedList 4=PurgeStandbyList 5=PurgeLowPriorityStandbyList
 MEMORY_PURGE_STANDBY_LIST = 4
-MEMORY_PURGE_MODIFIED_PAGE_LIST = 5
-MEMORY_PURGE_COMBINED_PAGE_LIST = 6
+MEMORY_FLUSH_MODIFIED_LIST = 3
+MEMORY_PURGE_LOW_PRIORITY_STANDBY_LIST = 5
 
 PROCESS_SET_QUOTA = 0x0100
 PROCESS_QUERY_INFORMATION = 0x0400
@@ -69,7 +75,7 @@ class MemoryAPI:
     def purge_modified_list(self):
         return False
 
-    def purge_combined_list(self):
+    def purge_low_priority_standby_list(self):
         return False
 
 
@@ -200,14 +206,14 @@ class WindowsMemoryAPI(MemoryAPI):
 
     # ---- 系统内存列表回收 ----
     def _purge(self, command):
-        """回收系统内存列表（standby / modified / combined）。
+        """回收系统内存列表（备用 / 修改 / 低优先级备用）。
 
-        兼容性说明：不同 Windows 版本对 SystemMemoryListInformation 的输入缓冲长度
-        要求不同——实测部分系统仅接受 8 字节（前 4 字节为命令），而旧实现只传 4 字节，
-        会导致在新系统上调用直接失败（STATUS_INFO_LENGTH_MISMATCH），系统级清理形同虚设。
-        这里优先尝试 8 字节，失败再回退 4 字节，以兼顾新旧系统。
+        输入为文档化的 4 字节 ULONG 命令值（SYSTEM_MEMORY_LIST_COMMAND）。
+        仅当内核明确返回 STATUS_INFO_LENGTH_MISMATCH 时才回退尝试 8 字节。
+        曾经的 bug：class 误写为 0x57，任何长度都返回 mismatch，"8 字节优先"
+        让错误调用返回成功，把真正的问题（class 错误）掩盖了。
         """
-        for length in (8, 4):
+        for length in (4, 8):
             buf = ctypes.create_string_buffer(length)
             struct.pack_into("<I", buf, 0, command)
             try:
@@ -219,16 +225,25 @@ class WindowsMemoryAPI(MemoryAPI):
             except Exception as exc:  # noqa: BLE001
                 logging.debug("purge %s (len=%d) 失败: %s", command, length, exc)
                 continue
+            status &= 0xFFFFFFFF
             if status == 0:
                 return True
-            logging.debug("purge %s (len=%d) 返回 0x%08X", command, length, status & 0xFFFFFFFF)
+            if status == 0xC0000004 and length == 4:
+                # STATUS_INFO_LENGTH_MISMATCH：仅此情况才值得换长度重试
+                continue
+            logging.warning(
+                "purge 命令 %s (len=%d) 失败: 0x%08X", command, length, status
+            )
+            return False
         return False
 
     def purge_standby_list(self):
         return self._purge(MEMORY_PURGE_STANDBY_LIST)
 
     def purge_modified_list(self):
-        return self._purge(MEMORY_PURGE_MODIFIED_PAGE_LIST)
+        """刷新修改页列表：把脏页写盘后释放。"""
+        return self._purge(MEMORY_FLUSH_MODIFIED_LIST)
 
-    def purge_combined_list(self):
-        return self._purge(MEMORY_PURGE_COMBINED_PAGE_LIST)
+    def purge_low_priority_standby_list(self):
+        """回收低优先级备用列表（ISLC 推荐的常驻操作）。"""
+        return self._purge(MEMORY_PURGE_LOW_PRIORITY_STANDBY_LIST)

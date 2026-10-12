@@ -66,6 +66,8 @@ class Cleaner:
     def deep_clean(self) -> dict:
         """深度清理：启用特权 -> 清工作集 -> 回收三个系统列表 -> 禁用特权。
 
+        三个列表为：备用列表（命令 4）、修改页列表刷新（命令 3）、
+        低优先级备用列表（命令 5），均经实测可真正回收内存。
         不做任何大块内存分配，也不调用慢速外部命令，因此快且不会造成内存瞬时飙升。
         每一步独立容错：单步失败（如某列表回收不支持）不影响其余步骤与最终收尾。
         """
@@ -84,7 +86,7 @@ class Cleaner:
         for step_name, step in (
             ("purge_standby_list", self.api.purge_standby_list),
             ("purge_modified_list", self.api.purge_modified_list),
-            ("purge_combined_list", self.api.purge_combined_list),
+            ("purge_low_priority_standby_list", self.api.purge_low_priority_standby_list),
         ):
             try:
                 step()
