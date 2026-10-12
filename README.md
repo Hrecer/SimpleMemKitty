@@ -38,7 +38,21 @@ SimpleMemKitty/
 ├── pyproject.toml
 ├── requirements.txt
 └── conftest.py
+├── .gitignore               # 忽略缓存/虚拟环境/构建产物
+└── .scratch/                # 专用临时/缓存文件夹（pytest 缓存等，自动忽略）
 ```
+
+## 临时文件夹 `.scratch`
+
+`.scratch/` 是本项目的**专用临时/缓存文件夹**，用来集中存放工具运行产生的临时文件，保持仓库根目录整洁：
+
+- pytest 的缓存现写在 `.scratch/.pytest_cache`（由 `pyproject.toml` 的 `cache_dir` 配置）；
+- 其它临时文件、日志、调试导出等也请放这里；
+- 该文件夹整体被 `.gitignore` 忽略（只保留 `.gitkeep` 占位），**不会进入 Git**；
+- 可随时安全删除，下次运行会自动重建。
+
+> 说明：Python 自身的 `__pycache__/`、构建产物 `build/`、`dist/`、`*.egg-info/` 属标准缓存/产物，
+> 同样已在 `.gitignore` 中忽略，仍按惯例留在各自位置，无需挪动。
 
 ## 运行测试
 

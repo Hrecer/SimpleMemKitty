@@ -31,3 +31,8 @@ dist/
 # ===== 项目运行时生成的本地配置（可选忽略） =====
 # settings.json 由程序自动生成，通常不纳入版本控制
 # settings.json
+
+# ===== 专门的临时/缓存文件夹 .scratch =====
+# 保留空文件夹（.gitkeep），忽略其中所有内容
+.scratch/*
+!.scratch/.gitkeep
