@@ -33,6 +33,8 @@ SimpleMemKitty/
 │       ├── main_window.py     # 主窗口 + 托盘
 │       └── settings_dialog.py
 ├── tests/                     # 单元测试
+├── build_exe.bat              # 一键打包 EXE（双击即可）
+├── build_exe.py               # 打包脚本主体
 ├── pyproject.toml
 ├── requirements.txt
 ├── conftest.py
@@ -75,6 +77,34 @@ pytest
 ```
 
 核心测试不依赖图形界面；未安装界面库时，界面导入测试会自动跳过。
+
+## 打包 EXE
+
+双击 `build_exe.bat`（或运行 `python build_exe.py`）即可生成单文件 EXE，
+默认输出到项目上层目录。首次运行会自动建立构建环境并下载依赖，之后每次
+重新打包约 1 分钟。
+
+构建环境位于 `%LOCALAPPDATA%\SimpleMemKittyBuild`（全 ASCII 路径），不进入
+版本库，与项目共用的 `.venv` 互不影响。
+
+**为什么构建环境要放在 ASCII 路径下**：PyInstaller 的 PyQt5 hook 依赖 Qt 自身的
+`QLibraryInfo` 来定位 Qt 插件目录，而 Qt 在含中文等非 ASCII 字符的路径下会把
+路径损坏成 `G:/????/...`，导致打包在分析阶段失败。脚本自动把源码复制到 ASCII
+路径下构建，再把 EXE 拷回，因此项目本身放在什么路径都可以（不需要移动项目、
+不使用任何链接）。
+
+常用参数：
+
+```bash
+python build_exe.py                    # 打包，输出到项目上层目录
+python build_exe.py --outdir D:\out    # 指定输出目录
+python build_exe.py --console          # 生成带控制台版本（便于排查问题）
+python build_exe.py --keep-temp        # 保留中间文件（便于排查问题）
+python build_exe.py --clean-venv       # 删除构建环境后重建
+```
+
+可用环境变量：`SMK_BUILD_ROOT`（构建环境目录）、`SMK_PIP_INDEX`（pip 源，
+默认 `https://pypi.org/simple`）。
 
 ## 注意事项
 
